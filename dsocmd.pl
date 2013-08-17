@@ -20,6 +20,7 @@ my $port;
 my $opt_command;
 my $opt_help;
 my $opt_macro;
+my $opt_plot;
 my $opt_capture;
 my $ser_dev = "/dev/ttyUSB0";
 
@@ -32,7 +33,8 @@ GetOptions ('h|help'      => \$opt_help,
               'tty=s'     => \$ser_dev,
               'baud=s'    => \$baudrate,
               'capture=s' => \$opt_capture,
-              'm|macro=s' => \$opt_macro
+              'm|macro=s' => \$opt_macro,
+              'plot'      => \$opt_plot
             );
            
 if($opt_help) {
@@ -69,6 +71,9 @@ if(defined($opt_capture)){
 
 }
 
+if (defined($opt_plot)) {
+  plot();
+}
 
 
 
@@ -102,6 +107,36 @@ required:
 
 
 
+sub plot_request {
+  
+  $port->are_match(";");
+  $port->lookclear; 
+  $port->write("\nPLOT\n");
+  
+  my $data="";
+  
+  my $EOT_timeout=8; # seconds
+  
+  for (my $i = 0; ($i<$EOT_timeout*100) ;$i++) {
+#     print $i."\n";
+    while(my $a = $port->lookfor) {
+       $i=0; # reset timeout
+       print $a.";\n";
+       $data.=$a.";\n";
+       if ($a eq "AF") {
+          print "transmission complete\n";
+          $data =~ s/^.*PLOT\?//;
+          return $data;
+       }
+
+    } 
+      Time::HiRes::sleep(.01);
+
+  }
+  
+  die "timeout\n";
+  
+}
 
 
 sub communicate {
