@@ -6,7 +6,8 @@ use Time::HiRes;
 use Getopt::Long;
 use POSIX qw/strftime/;
 
-
+# plot destination
+# check for tools
 
 
 
@@ -36,17 +37,25 @@ GetOptions ('h|help'      => \$opt_help,
               'q|quiet'   => \$opt_quiet
             );
            
+# define VERBOSE file handle to print debug output
+if ($opt_quiet) {
+   open(VERBOSE, '>', "/dev/null") or die;
+} else {
+   *VERBOSE = *STDOUT;
+}
+           
+# you entered help option, let's print the help screen and quit
 if($opt_help) {
-    &help();
+    help();
     exit(0);
 }
 
 
-init_port();
 
 if(defined($opt_command)){
+  init_port();
   communicate($opt_command);
-  print "\n\n";
+  #print "\n\n";
   exit;
 }
 
@@ -58,7 +67,7 @@ if(defined($opt_macro)) {
 
 
 if(defined($opt_capture)){
-
+  init_port();
   if($opt_capture =~ m/(\d)([AB])/){
     my $channel =$1;
     my $ab = $2;
@@ -71,10 +80,14 @@ if(defined($opt_capture)){
 }
 
 if (defined($opt_plot)) {
+  init_port();
+  communicate("PLTDST=SRL"); # set scope plot output to serial interface
   plot();
   exit;
 }
 
+
+# no options were entered, print help screen
 help();
 
 
@@ -138,13 +151,14 @@ sub plot_request {
 }
 
 
+
 sub communicate {
 
   my $ack_timeout=0.5;
   my $answer_timeout=10;
 
   my $command = $_[0];
-  print "sending command $command\n";
+  print VERBOSE "sending command $command\n";
 
 
   $port->are_match("\r");
@@ -159,9 +173,9 @@ sub communicate {
 ACK_POLLING:  for (my $i = 0; ($i<$ack_timeout*100) ;$i++) {
 #     print $i."\n";
     while(my $a = $port->lookfor) {
-        if($a=~ m/\?([^\?]+)/) {
+        if($a=~ m/[\?:]([^\?]+)/) {
           my $cmd_echo = $1;
-          print "DSO received command $cmd_echo\n\n";
+          print VERBOSE "DSO received command $cmd_echo\n\n";
           if($cmd_echo ne $command) {
             print "ERROR: command transmission faulty\n";
             return "ERROR";
@@ -184,7 +198,8 @@ ANSWER_POLLING:  for (my $i = 0; ($i<$answer_timeout*100) ;$i++) {
 #     print $i."\n";
     while(my $a = $port->lookfor) {
 
-        print "received answer:\n";
+        print VERBOSE "received answer:\n";
+        $a =~ s/\n//g; # remove empty lines
         print $a."\n";
         return $a;
 

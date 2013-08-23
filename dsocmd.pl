@@ -6,7 +6,8 @@ use Time::HiRes;
 use Getopt::Long;
 use POSIX qw/strftime/;
 
-
+# plot destination
+# check for tools
 
 
 
@@ -36,6 +37,13 @@ GetOptions ('h|help'      => \$opt_help,
               'q|quiet'   => \$opt_quiet
             );
            
+# define VERBOSE file handle to print debug output
+if ($opt_quiet) {
+   open(VERBOSE, '>', "/dev/null") or die;
+} else {
+   *VERBOSE = *STDOUT;
+}
+           
 # you entered help option, let's print the help screen and quit
 if($opt_help) {
     help();
@@ -47,7 +55,7 @@ if($opt_help) {
 if(defined($opt_command)){
   init_port();
   communicate($opt_command);
-  print "\n\n";
+  #print "\n\n";
   exit;
 }
 
@@ -73,6 +81,7 @@ if(defined($opt_capture)){
 
 if (defined($opt_plot)) {
   init_port();
+  communicate("PLTDST=SRL"); # set scope plot output to serial interface
   plot();
   exit;
 }
@@ -142,13 +151,14 @@ sub plot_request {
 }
 
 
+
 sub communicate {
 
   my $ack_timeout=0.5;
   my $answer_timeout=10;
 
   my $command = $_[0];
-  print "sending command $command\n";
+  print VERBOSE "sending command $command\n";
 
 
   $port->are_match("\r");
@@ -163,9 +173,9 @@ sub communicate {
 ACK_POLLING:  for (my $i = 0; ($i<$ack_timeout*100) ;$i++) {
 #     print $i."\n";
     while(my $a = $port->lookfor) {
-        if($a=~ m/\?([^\?]+)/) {
+        if($a=~ m/[\?:]([^\?]+)/) {
           my $cmd_echo = $1;
-          print "DSO received command $cmd_echo\n\n";
+          print VERBOSE "DSO received command $cmd_echo\n\n";
           if($cmd_echo ne $command) {
             print "ERROR: command transmission faulty\n";
             return "ERROR";
@@ -188,7 +198,8 @@ ANSWER_POLLING:  for (my $i = 0; ($i<$answer_timeout*100) ;$i++) {
 #     print $i."\n";
     while(my $a = $port->lookfor) {
 
-        print "received answer:\n";
+        print VERBOSE "received answer:\n";
+        $a =~ s/\n//g; # remove empty lines
         print $a."\n";
         return $a;
 
@@ -306,7 +317,7 @@ print "trace offset: $traceOffsetVoltage volts\n";
 
 
 my $dataString = communicate($transferCmd);
-# testdata if communication is too negthy :D
+# testdata if communication is too lengthy :D
 # my $dataString = "TRC1A=-2,4,8,12,15,19,24,28,31,34,35,36,40,42,43,46,51,50,53,54,56,56,58,60,59,63,65,62,67,67,69,66,72,72,71,69,73,72,75,73,75,75,75,77,77,77,77,77,78,77,78,78,81,79,76,77,78,81,81,78,80,81,80,82,81,80,81,81,82,81,81,81,79,80,80,81,82,81,81,80,84,81,82,81,82,82,82,83,82,81,81,80,83,82,82,81,81,80,83,80,82,83,82,83,81,81,80,84,83,83,83,83,83,84,81,82,84,84,83,83,82,82,81,82,81,83,85,84,83,83,85,81,83,81,82,82,84,81,83,81,82,83,83,82,84,82,82,80,83,82,82,84,83,82,80,80,82,84,84,84,82,85,83,83,83,82,83,83,83,82,81,82,83,83,82,83,83,82,83,81,84,83,83,84,82,82,82,82,84,82,82,82,83,83,81,82,84,82,84,81,82,84,82,81,81,83,82,84,81,83,81,81,82,84,81,81,84,82,83,82,82,81,81,82,81,82,84,82,82,82,84,83,83,81,84,82,83,82,84,83,84,83,82,82,83,84,82,82,82,81,83,84,82,82,83,80,81,82,84,83,82,84,84,84,81,82,83,82,83,82,82,82,82,80,81,81,83,82,82,82,83,84,83,81,82,81,82,81,83,79,82,80,82,83,81,82,81,81,81,81,82,83,82,83,80,79,81,83,83,83,83,82,83,82,83,83,82,83,84,83,83,81,81,82,81,82,85,81,82,81,83,82,83,
 # 82,82,81,82,82,82,82,82,82,81,82,82,82,82,81,82,81,82,84,80,82,79,79,78,83,83,85,82,82,82,82,83,82,82,83,83,82,83,82,81,82,81,83,83,81,82,83,85,82,83,82,82,81,82,81,83,82,82,82,81,82,82,81,81,80,82,81,81,82,83,82,81,80,78,85,85,82,82,82,83,83,82,83,82,82,83,81,83,82,82,84,81,81,83,81,83,82,83,82,82,81,81,81,83,82,82,80,81,83,81,83,84,81,82,81,82,80,82,83,81,82,81,81,78,84,82,82,83,82,81,82,80,81,82,82,83,83,82,81,81,82,81,81,83,82,76,67,58,50,43,36,28,20,16,9,4,-2,-8,-11,-14,-16,-22,-28,-31,-34,-35,-39,-40,-41,-44,-46,-52,-52,-55,-54,-56,-57,-59,-60,-60,-62,-63,-65,-65,-66,-66,-68,-69,-70,-71,-71,-74,-71,-72,-73,-73,-74,-74,-73,-76,-76,-75,-76,-76,-77,-77,-77,-76,-79,-77,-79,-80,-80,-78,-81,-79,-80,-79,-79,-79,-80,-82,-83,-82,-78,-79,-80,-80,-79,-80,-79,-81,-80,-79,-79,-79,-82,-81,-81,-80,-80,-83,-80,-80,-82,-82,-81,-80,-80,-80,-79,-81,-83,-79,-81,-81,-82,-82,-82,-81,-81,-80,-82,-82,-81,-82,-82,-81,-81,-80,-81,-83,-82,-82,-79,-81,-82,-80,-81,-80,-82,-82,-81,-82,-83,-81,-82,-81,-82,-82,-80,-82,-82,-80,-82,-
 # 80,
