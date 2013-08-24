@@ -106,17 +106,51 @@ help();
 
 
 
-
+GetOptions ('h|help'      => \$opt_help,
+              'c|cmd=s'   => \$opt_command,
+              'tty=s'     => \$ser_dev,
+              'baud=s'    => \$baudrate,
+              'capture=s' => \$opt_capture,
+              'm|macro=s' => \$opt_macro,
+              'plot'      => \$opt_plot,
+              'q|quiet'   => \$opt_quiet,
+              'show'      => \$opt_show,
+              'pdf'       => \$opt_pdf
+            );
 
 sub help{
-    print "Usage: ./dsocmd.pl [options]
+    print "
+DSOCMD is a simple tool communicate with a GOULD 4094 DSO (digital storage oscilloscope)
+via the serial interface. It is especially useful to export screenshots from the scope
+as vector images or capture recorded trace data from the scope's memory.
+
+written 2013 by Michael Wiebusch
+acidbourbon.wordpress.com
+
+    Usage: ./dsocmd.pl [-c \"COMMAND\" | -capture XX | -plot] [options]
    
 options:
-   [-t|--time  <seconds>]             : The runtime of the daq_netmem (effective runtime).
-   [-h|--help]                        : Show this help.
-   [-p|--path /path/to/dump/data/ ]   : Specify the path where the data is to be written to.
-                                        default: ./
+    [-h|--help]             : Show this help.
+    [-tty /dev/yourDevice]  : sets the serial interface to /dev/yourDevice
+                              instead of /dev/ttyUSB0
+    [-baud BAUDRATE]        : sets the serial interface to BAUDRATE
+    [-capture XX]           : downloads the trace data from channel XX (=1A,1B,2A,2B,...)
+                              saves a dat file and a plot in ./capture
+    [-plot]                 : make a screenshot of the scope and saves it in ./plot
+    [-pdf]                  : saves the generated plots as pdf, use in combination with
+                              -capture and -plot
+    [-show]                 : shows the plot after a -plot or -capture
+    [-c \"COMMAND\"]          : send \"COMMAND\" to the DSO and print the answer
+    [-q]                    : quiet option, do not print debug data when sending a scope
+                              command, use in combination with -c
+examples:
 
+    ./dsocmd -c \"HELLO\" -q -tty /dev/ttyUSB1 -baud 9600
+    
+    ./dsocmd -plot -pdf -show
+    
+    ./dsocmd -capture 1A -pdf -show
+                                          
 ";
 }
 
