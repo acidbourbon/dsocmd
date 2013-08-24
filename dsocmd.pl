@@ -150,7 +150,26 @@ examples:
     ./dsocmd -plot -pdf -show
     
     ./dsocmd -capture 1A -pdf -show
-                                          
+                                     
+dependencies:
+
+before you run the script, make sure you have the following software packages installed:
+
+    libdevice-serialport-perl [ for serial communication, mandatory ]
+    hp2xx [ for hpgl -> eps conversion ]
+    texlive-font-utils [contains \"epstopdf\", for eps -> pdf conversion ]
+    gnuplot [ for plots of downloaded traces ]
+
+On a Debian/Ubuntu/Mint Linux you can install all that by typing this into your console:
+
+\$ sudo apt-get install libdevice-serialport-perl hp2xx texlive-font-utils gnuplot
+
+Make sure your user can access the serial interface. Therefore \"user\" has to be 
+member of the \"dialout\" group. You can achieve this by simply typing:
+
+\$ sudo usermod -a -G dialout user
+
+Subsequently user has to log out and in again, so the changes become effective.
 ";
 }
 
