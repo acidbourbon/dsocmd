@@ -23,6 +23,8 @@ my $opt_macro;
 my $opt_plot;
 my $opt_capture;
 my $opt_quiet;
+my $opt_show;
+my $opt_pdf;
 my $ser_dev = "/dev/ttyUSB0";
 
 
@@ -34,7 +36,9 @@ GetOptions ('h|help'      => \$opt_help,
               'capture=s' => \$opt_capture,
               'm|macro=s' => \$opt_macro,
               'plot'      => \$opt_plot,
-              'q|quiet'   => \$opt_quiet
+              'q|quiet'   => \$opt_quiet,
+              'show'      => \$opt_show,
+              'pdf'       => \$opt_pdf
             );
            
 # define VERBOSE file handle to print debug output
@@ -105,9 +109,9 @@ help();
 
 
 sub help{
-    print "Usage: exec_evtbuild_t.pl -t <float>
+    print "Usage: ./dsocmd.pl [options]
    
-required:
+options:
    [-t|--time  <seconds>]             : The runtime of the daq_netmem (effective runtime).
    [-h|--help]                        : Show this help.
    [-p|--path /path/to/dump/data/ ]   : Specify the path where the data is to be written to.
@@ -133,7 +137,7 @@ sub plot_request {
 #     print $i."\n";
     while(my $a = $port->lookfor) {
        $i=0; # reset timeout
-       print $a.";\n";
+       print VERBOSE $a.";\n";
        $data.=$a.";\n";
        if ($a eq "AF") {
           print "transmission complete\n";
@@ -271,8 +275,17 @@ sub plot {
 #      system("hp2xx dualplot.hpgl -m eps -h150 -w200 -p542
 #       chdir($plotDir);
       system("hp2xx $hpglFile -m eps -p542 -a 2");
-#       system("epstopdf $hpglFile.eps --outfile=$baseFileName.pdf");
-    system("gv $hpglFile.eps");
+      system("rm $hpglFile"); #delete hpglfile
+      if ($opt_pdf) {
+        system("epstopdf $hpglFile.eps --outfile=$plotDir$baseFileName.pdf && rm $hpglFile.eps");
+      }
+    if ($opt_show) {
+      if(-e $plotDir.$baseFileName.".pdf") {
+        system("gv $plotDir$baseFileName.pdf");
+      } else {
+      system("gv $hpglFile.eps");
+      }
+    }
 
 }
 
@@ -361,8 +374,13 @@ if ($dataString =~ m/$transferCmd=([^=]+)/ ) {
       close(DATA);
 
       open(GNUPLOT,"|gnuplot");
+      if ($opt_pdf) {
+      print GNUPLOT "set terminal postscript color solid\n";
+      print GNUPLOT "set output \"|ps2pdf - $baseFileName.pdf\"\n";
+      } else {
       print GNUPLOT "set terminal png\n";
       print GNUPLOT "set output \"$baseFileName.png\"\n";
+      }
       print GNUPLOT qq%set xlabel "time [s]"\n%;
       print GNUPLOT qq%set ylabel "voltage [V]"\n%;
       my $minV=-$traceOffsetVoltage-$screenHeightVoltage/2;
@@ -374,6 +392,12 @@ if ($dataString =~ m/$transferCmd=([^=]+)/ ) {
       print GNUPLOT "\ne\n\n";
       close GNUPLOT;
       
-      system("display $baseFileName.png");
+      if ($opt_show) {
+        if($opt_pdf) {
+          system("display '$baseFileName.pdf'");
+        } else {
+          system("display $baseFileName.png");
+        }
+      }
 
 }
