@@ -334,9 +334,9 @@ sub plot {
       }
     if ($opt_show) {
       if(-e $plotDir.$baseFileName.".pdf") {
-        system("gv $plotDir$baseFileName.pdf");
+        system("xdg-open $plotDir$baseFileName.pdf");
       } else {
-      system("gv $hpglFile.eps");
+      system("xdg-open $hpglFile.eps");
       }
     }
 
@@ -447,9 +447,9 @@ if ($dataString =~ m/$transferCmd=([^=]+)/ ) {
       
       if ($opt_show) {
         if($opt_pdf) {
-          system("display '$baseFileName.pdf'");
+          system("xdg-open '$baseFileName.pdf'");
         } else {
-          system("display $baseFileName.png");
+          system("xdg-open $baseFileName.png");
         }
       }
 
