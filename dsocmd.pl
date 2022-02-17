@@ -318,7 +318,7 @@ sub plot {
   }
   
   my $hpglData = plot_request(); 
-      my $baseFileName = "plot".strftime("_%Y.%m.%d_%H:%M:%S", localtime());
+      my $baseFileName = "plot".strftime("_%Y-%m-%d_%H-%M-%S", localtime());
       my $hpglFile = $plotDir.$baseFileName.".hpgl";
 
       open(DATA,">$hpglFile");
@@ -420,7 +420,7 @@ if ($dataString =~ m/$transferCmd=([^=]+)/ ) {
       unless(-e $captureDir) {
         mkdir $captureDir;
       }
-      my $baseFileName = $captureDir.$transferCmd.strftime("_%Y.%m.%d_%H:%M:%S", localtime());
+      my $baseFileName = $captureDir.$transferCmd.strftime("_%Y-%m-%d_%H-%M-%S", localtime());
 
       open(DATA,">$baseFileName.dat");
       print DATA join("\n",@data);
